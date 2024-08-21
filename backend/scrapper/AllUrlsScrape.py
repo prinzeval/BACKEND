@@ -9,6 +9,11 @@ from typing import List
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from .Url_Info import bring_data
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service as ChromeService
+from webdriver_manager.chrome import ChromeDriverManager
 
 class ScraperKING:
     def __init__(self, link_limit=10000000):
@@ -41,16 +46,18 @@ class ScraperKING:
                 return True
         return False
 
-    def fetch_with_selenium(self, url):
+    def fetch_with_selenium(url):
         options = Options()
         options.add_argument('--headless')
         options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
         options.add_argument('--window-size=1920,1080')
+
+        service = ChromeService(executable_path=ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=service, options=options)
         
-        driver = webdriver.Chrome(options=options)
         driver.get(url)
-        delay = random.randint(0, 1)
-        time.sleep(delay)
+        time.sleep(random.randint(0, 2))  # Adjust delay as needed
         page_source = BeautifulSoup(driver.page_source, 'html.parser')
         driver.quit()
         return page_source
