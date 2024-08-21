@@ -13,7 +13,9 @@ app.add_middleware(
     allow_methods=["*"],  # Allows all HTTP methods
     allow_headers=["*"],  # Allows all HTTP headers
 )
-
+@app.get("/")
+async def read_root():
+    return {"message": "Welcome to the scraping world!"}
 @app.post("/scrape/", response_model=Output)
 async def scrape_endpoint(scrapper_url: ScrapedBaseUrl):
     try:
