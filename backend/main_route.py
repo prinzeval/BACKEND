@@ -8,7 +8,7 @@ app = FastAPI()
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://scraper-ui-9xwy.onrender.com/"],  # Adjust this to match your frontend URL
+    allow_origins=["https://scraper-ui-9xwy.onrender.com"],  # Adjust this to match your frontend URL
     allow_credentials=True,
     allow_methods=["*"],  # Allows all HTTP methods
     allow_headers=["*"],  # Allows all HTTP headers
