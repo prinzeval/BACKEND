@@ -47,7 +47,7 @@ class ScraperKING:
                 return True
         return False
 
-    def fetch_with_selenium(url):
+    def fetch_with_selenium(self,url):
         options = Options()
         options.add_argument('--headless')
         options.add_argument('--no-sandbox')
