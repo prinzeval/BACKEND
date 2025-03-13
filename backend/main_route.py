@@ -16,13 +16,15 @@ app.add_middleware(
 @app.get("/")
 async def read_root():
     return {"message": "Welcome to the scraping world!"}
+
 @app.post("/scrape/", response_model=Output)
 async def scrape_endpoint(scrapper_url: ScrapedBaseUrl):
     try:
         result = await web_scraper(
             url=scrapper_url.url, 
             whitelist=",".join(scrapper_url.whitelist), 
-            blacklist=",".join(scrapper_url.blacklist)
+            blacklist=",".join(scrapper_url.blacklist),
+            link_limit=scrapper_url.link_limit
         )
         return Output(all_links=result["memory"]["scrapedLinks"])
     except Exception as e:
@@ -50,12 +52,12 @@ async def multiple_page_media_endpoint(scrapper_url: ScrapedBaseUrl):
         result = await multiple_page_media(
             url=scrapper_url.url, 
             whitelist=",".join(scrapper_url.whitelist), 
-            blacklist=",".join(scrapper_url.blacklist)
+            blacklist=",".join(scrapper_url.blacklist),
+            link_limit=scrapper_url.link_limit
         )
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @app.get("/fetch/")
 async def fetch_endpoint(url: str):

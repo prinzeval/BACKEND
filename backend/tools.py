@@ -12,6 +12,7 @@ class WebScraperSchema(BaseModel):
     url: str = Field(..., title="Base URL", description="The base URL to start scraping from.")
     whitelist: str = Field("", title="Whitelist", description="Comma-separated URLs or substrings to include in the scrape.")
     blacklist: str = Field("", title="Blacklist", description="Comma-separated URLs or substrings to exclude from the scrape.")
+    link_limit: int = Field(100, title="Link Limit", description="Maximum number of links to scrape.")
 
 class SinglePageScraperSchema(BaseModel):
     url: str = Field(..., title="URL", description="The URL of the page to scrape.")
@@ -23,16 +24,18 @@ class MultiplePageMediaSchema(BaseModel):
     url: str = Field(..., title="Base URL", description="The base URL to start scraping from.")
     whitelist: str = Field("", title="Whitelist", description="Comma-separated URLs or substrings to include in the scrape.")
     blacklist: str = Field("", title="Blacklist", description="Comma-separated URLs or substrings to exclude from the scrape.")
+    link_limit: int = Field(100, title="Link Limit", description="Maximum number of links to scrape.")
 
+    
 # Define the web scraping function
-async def web_scraper(url: str, whitelist: str = "", blacklist: str = "", memory: Dict = {}):
+async def web_scraper(url: str, whitelist: str = "", blacklist: str = "", link_limit: int = 100, memory: Dict = {}):
     try:
         # Convert comma-separated strings to lists, handle empty strings
         whitelist_list = [item.strip() for item in whitelist.split(",") if item.strip()] if whitelist else []
         blacklist_list = [item.strip() for item in blacklist.split(",") if item.strip()] if blacklist else []
 
-        # Initialize the scraper (replace with your actual scraper class)
-        scraper = ScraperKING()
+        # Initialize the scraper with user-specified link limit
+        scraper = ScraperKING(link_limit=link_limit)
 
         # Perform the scraping
         result = scraper.scrape_website_links(url, whitelist_list, blacklist_list)
@@ -42,7 +45,7 @@ async def web_scraper(url: str, whitelist: str = "", blacklist: str = "", memory
 
         # Return the result
         return {
-            "responseString": f"Scraped {len(memory['scrapedLinks'])} links.",
+            "responseString": f"Scraped {len(memory['scrapedLinks'])} links with limit {link_limit}.",
             "memory": memory
         }
     except Exception as e:
@@ -51,7 +54,6 @@ async def web_scraper(url: str, whitelist: str = "", blacklist: str = "", memory
             "responseString": f"An error occurred: {str(e)}",
             "memory": memory
         }
-
 # Define the single page scraping function
 async def scrape_single_page(url: str, memory: Dict = {}):
     try:
@@ -104,14 +106,14 @@ async def extract_media_from_single_page(url: str, memory: Dict = {}):
         }
 
 # Define the multiple page media extraction function
-async def multiple_page_media(url: str, whitelist: str = "", blacklist: str = "", memory: Dict = {}):
+async def multiple_page_media(url: str, whitelist: str = "", blacklist: str = "", link_limit: int = 100, memory: Dict = {}):
     try:
         # Convert comma-separated strings to lists, handle empty strings
         whitelist_list = [item.strip() for item in whitelist.split(",") if item.strip()] if whitelist else []
         blacklist_list = [item.strip() for item in blacklist.split(",") if item.strip()] if blacklist else []
 
-        # Initialize the scraper (replace with your actual scraper class)
-        scraper = ScraperKING()
+        # Initialize the scraper with user-specified link limit
+        scraper = ScraperKING(link_limit=link_limit)
 
         # Perform the scraping to get all links
         result = scraper.scrape_website_links(url, whitelist_list, blacklist_list)
@@ -129,7 +131,7 @@ async def multiple_page_media(url: str, whitelist: str = "", blacklist: str = ""
 
         # Return the result
         return {
-            "responseString": f"Extracted {len(media_links)} media links from the website {url}.",
+            "responseString": f"Extracted {len(media_links)} media links from {len(all_links)} pages of website {url} (limit: {link_limit}).",
             "memory": memory
         }
     except Exception as e:
