@@ -145,3 +145,75 @@ async def extract_related_links(url: str, whitelist=None, blacklist=None, link_l
         return {"related_links": list(related_links)}
     except Exception as e:
         return {"error": str(e)}
+    
+# Add these new functions to your tools.py file
+
+async def extract_multiple_links(url: str, whitelist: str = "", blacklist: str = "", link_limit: int = 100, memory: Dict = {}):
+    try:
+        whitelist_list = parse_list_param(whitelist)
+        blacklist_list = parse_list_param(blacklist)
+        
+        scraper = ScraperKING(link_limit=link_limit)
+        result = scraper.get_links_only(url, whitelist_list, blacklist_list)
+        all_links = result.get("all_links", [])
+        
+        # Collect all links from each page
+        collected_links = set()
+        for link in all_links:
+            try:
+                single_page_links = await extract_links_only(link, whitelist_list, blacklist_list)
+                if "links" in single_page_links:
+                    collected_links.update(single_page_links["links"])
+            except Exception:
+                continue
+        
+        memory["allExtractedLinks"] = list(collected_links)
+        return {
+            "responseString": f"Extracted {len(collected_links)} links from {len(all_links)} pages.",
+            "links": list(collected_links),
+            "memory": memory
+        }
+    except Exception as e:
+        return {
+            "responseString": f"Error: {str(e)}",
+            "memory": memory
+        }
+
+async def extract_multiple_related_links(url: str, whitelist: str = "", blacklist: str = "", link_limit: int = 100, memory: Dict = {}):
+    try:
+        whitelist_list = parse_list_param(whitelist)
+        blacklist_list = parse_list_param(blacklist)
+        
+        # First get all links without scraping content
+        scraper = ScraperKING(link_limit=link_limit)
+        result = scraper.get_links_only(url, whitelist_list, blacklist_list)
+        all_links = result.get("all_links", [])
+        
+        # Extract domain from original URL
+        parsed_url = urlparse(url)
+        base_domain = parsed_url.netloc
+        
+        # Collect all related links from each page
+        related_links = set()
+        for link in all_links:
+            try:
+                # Only process links from the same domain
+                parsed_link = urlparse(link)
+                if parsed_link.netloc == base_domain:
+                    single_page_related = await extract_related_links(link, whitelist_list, blacklist_list)
+                    if "related_links" in single_page_related:
+                        related_links.update(single_page_related["related_links"])
+            except Exception:
+                continue
+        
+        memory["allRelatedLinks"] = list(related_links)
+        return {
+            "responseString": f"Extracted {len(related_links)} related links from {len(all_links)} pages.",
+            "related_links": list(related_links),
+            "memory": memory
+        }
+    except Exception as e:
+        return {
+            "responseString": f"Error: {str(e)}",
+            "memory": memory
+        }    

@@ -2,7 +2,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from tools import (web_scraper, scrape_single_page, extract_media_from_single_page, 
-                  multiple_page_media, extract_links_only, extract_related_links)
+                  multiple_page_media, extract_links_only, extract_related_links,extract_multiple_links,extract_multiple_related_links)
 from models import ScrapedBaseUrl, Output, MultipleFetchRequest
 from fetch_db import fetch_data, fetch_multiple_data
 
@@ -97,3 +97,31 @@ async def extract_related_links_endpoint(scrapper_url: ScrapedBaseUrl):
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# Add these endpoints to your main_route.py file
+
+@app.post("/extract_multiple_links/")
+async def extract_multiple_links_endpoint(scrapper_url: ScrapedBaseUrl):
+    try:
+        result = await extract_multiple_links(
+            url=scrapper_url.url, 
+            whitelist=",".join(scrapper_url.whitelist), 
+            blacklist=",".join(scrapper_url.blacklist),
+            link_limit=scrapper_url.link_limit
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/extract_multiple_related_links/")
+async def extract_multiple_related_links_endpoint(scrapper_url: ScrapedBaseUrl):
+    try:
+        result = await extract_multiple_related_links(
+            url=scrapper_url.url, 
+            whitelist=",".join(scrapper_url.whitelist), 
+            blacklist=",".join(scrapper_url.blacklist),
+            link_limit=scrapper_url.link_limit
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))    
