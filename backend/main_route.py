@@ -1,18 +1,19 @@
+# 9. main_route.py - Simplified but mostly intact
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from tools import web_scraper, scrape_single_page, extract_media_from_single_page, multiple_page_media, extract_links_only, extract_related_links
+from tools import (web_scraper, scrape_single_page, extract_media_from_single_page, 
+                  multiple_page_media, extract_links_only, extract_related_links)
 from models import ScrapedBaseUrl, Output, MultipleFetchRequest
 from fetch_db import fetch_data, fetch_multiple_data
 
 app = FastAPI()
 
-# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Adjust this to match your frontend URL
+    allow_origins=["http://localhost:5173"],
     allow_credentials=True,
-    allow_methods=["*"],  # Allows all HTTP methods
-    allow_headers=["*"],  # Allows all HTTP headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 @app.get("/")
@@ -81,7 +82,6 @@ async def fetch_multiple_endpoint(request: MultipleFetchRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# New endpoint to extract links only
 @app.post("/extract_links/")
 async def extract_links_endpoint(scrapper_url: ScrapedBaseUrl):
     try:
@@ -89,13 +89,11 @@ async def extract_links_endpoint(scrapper_url: ScrapedBaseUrl):
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-from urllib.parse import urlparse
 
-# New endpoint to extract related links only
 @app.post("/extract_related_links/")
 async def extract_related_links_endpoint(scrapper_url: ScrapedBaseUrl):
     try:
         result = await extract_related_links(url=scrapper_url.url)
         return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))    
+        raise HTTPException(status_code=500, detail=str(e))

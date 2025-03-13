@@ -1,331 +1,142 @@
-import os
-from pydantic import BaseModel, Field
-from typing import Dict, List
+# 8. tools.py - Refactored to use the utilities
 from scrapper.AllUrlsScrape import ScraperKING
 from scrapper.Url_Info import bring_data
 from scrapper.media import extract_media_links
-import requests
-from bs4 import BeautifulSoup
-from urllib.parse import urljoin,urlparse
+from scrapper.utils import fetch_page, is_in_whitelist, is_in_blacklist
+from models import ScrapedBaseUrl, Output
+from urllib.parse import urljoin, urlparse
 from collections import deque
+from typing import Dict, List
 
+# Helper to convert comma-separated string to list
+def parse_list_param(param_str):
+    return [item.strip() for item in param_str.split(",") if item.strip()] if param_str else []
 
-# Define schemas for the tools
-class WebScraperSchema(BaseModel):
-    url: str = Field(..., title="Base URL", description="The base URL to start scraping from.")
-    whitelist: str = Field("", title="Whitelist", description="Comma-separated URLs or substrings to include in the scrape.")
-    blacklist: str = Field("", title="Blacklist", description="Comma-separated URLs or substrings to exclude from the scrape.")
-    link_limit: int = Field(100, title="Link Limit", description="Maximum number of links to scrape.")
-
-class SinglePageScraperSchema(BaseModel):
-    url: str = Field(..., title="URL", description="The URL of the page to scrape.")
-
-class SinglePageMediaSchema(BaseModel):
-    url: str = Field(..., title="URL", description="The URL of the page to scrape for media.")
-
-class MultiplePageMediaSchema(BaseModel):
-    url: str = Field(..., title="Base URL", description="The base URL to start scraping from.")
-    whitelist: str = Field("", title="Whitelist", description="Comma-separated URLs or substrings to include in the scrape.")
-    blacklist: str = Field("", title="Blacklist", description="Comma-separated URLs or substrings to exclude from the scrape.")
-    link_limit: int = Field(100, title="Link Limit", description="Maximum number of links to scrape.")
-
-    
-# Define the web scraping function
+# Reusable scraping functions
 async def web_scraper(url: str, whitelist: str = "", blacklist: str = "", link_limit: int = 100, memory: Dict = {}):
     try:
-        # Convert comma-separated strings to lists, handle empty strings
-        whitelist_list = [item.strip() for item in whitelist.split(",") if item.strip()] if whitelist else []
-        blacklist_list = [item.strip() for item in blacklist.split(",") if item.strip()] if blacklist else []
-
-        # Initialize the scraper with user-specified link limit
+        whitelist_list = parse_list_param(whitelist)
+        blacklist_list = parse_list_param(blacklist)
+        
         scraper = ScraperKING(link_limit=link_limit)
-
-        # Perform the scraping
         result = scraper.scrape_website_links(url, whitelist_list, blacklist_list)
-
-        # Update memory with scraped links
+        
         memory["scrapedLinks"] = result.get("all_links", [])
-
-        # Return the result
         return {
             "responseString": f"Scraped {len(memory['scrapedLinks'])} links with limit {link_limit}.",
             "memory": memory
         }
     except Exception as e:
-        # Return an error response
         return {
-            "responseString": f"An error occurred: {str(e)}",
+            "responseString": f"Error: {str(e)}",
             "memory": memory
         }
-# Define the single page scraping function
+
 async def scrape_single_page(url: str, memory: Dict = {}):
     try:
-        # Since bring_data expects lists for URLs, we'll wrap the single URL in a list
-        needed_data = [url]
-        whitelist = [url]  # Automatically duplicating the input link into the whitelist
-        blacklist = []
-
-        # Perform the scraping (replace with your actual function)
-        bring_data(needed_data, whitelist, blacklist)
-
-        # Assuming bring_data does not return a value, we manually set the memory
+        bring_data([url], [url], [])
         memory["scrapedContent"] = "Content from the single page scrape is now available."
-
-        # Return the result
         return {
-            "responseString": f"Scraped content and media URLs from the page {url}.",
+            "responseString": f"Scraped content from {url}.",
             "memory": memory
         }
     except Exception as e:
-        # Return an error response
         return {
-            "responseString": f"An error occurred: {str(e)}",
+            "responseString": f"Error: {str(e)}",
             "memory": memory
         }
 
-# Define the single page media extraction function
 async def extract_media_from_single_page(url: str, memory: Dict = {}):
     try:
-        # Fetch the page content
-        response = requests.get(url)
-        page_source = BeautifulSoup(response.content, 'html.parser')
-
-        # Extract media links (replace with your actual extraction function)
+        page_source = fetch_page(url)
         media_links = extract_media_links(page_source, url)
-
-        # Update memory with extracted media links
+        
         memory["mediaLinks"] = media_links
-
-        # Return the result
         return {
-            "responseString": f"Extracted {len(media_links)} media links from the page {url}.",
+            "responseString": f"Extracted {len(media_links)} media links from {url}.",
             "memory": memory
         }
     except Exception as e:
-        # Return an error response
         return {
-            "responseString": f"An error occurred: {str(e)}",
+            "responseString": f"Error: {str(e)}",
             "memory": memory
         }
 
-# Define the multiple page media extraction function
 async def multiple_page_media(url: str, whitelist: str = "", blacklist: str = "", link_limit: int = 100, memory: Dict = {}):
     try:
-        # Convert comma-separated strings to lists, handle empty strings
-        whitelist_list = [item.strip() for item in whitelist.split(",") if item.strip()] if whitelist else []
-        blacklist_list = [item.strip() for item in blacklist.split(",") if item.strip()] if blacklist else []
-
-        # Initialize the scraper with user-specified link limit
-        scraper = ScraperKING(link_limit=link_limit)
-
-        # Perform the scraping to get all links
-        result = scraper.scrape_website_links(url, whitelist_list, blacklist_list)
-        all_links = result.get("all_links", [])
-
-        # Extract media links from all the scraped links
+        # First get all links
+        scraper_result = await web_scraper(url, whitelist, blacklist, link_limit)
+        all_links = scraper_result["memory"]["scrapedLinks"]
+        
+        # Then extract media from each link
         media_links = []
         for link in all_links:
-            response = requests.get(link)
-            page_source = BeautifulSoup(response.content, 'html.parser')
-            media_links.extend(extract_media_links(page_source, link))
-
-        # Update memory with extracted media links
+            try:
+                page_source = fetch_page(link)
+                media_links.extend(extract_media_links(page_source, link))
+            except Exception:
+                continue
+        
         memory["mediaLinks"] = media_links
-
-        # Return the result
         return {
-            "responseString": f"Extracted {len(media_links)} media links from {len(all_links)} pages of website {url} (limit: {link_limit}).",
+            "responseString": f"Extracted {len(media_links)} media links from {len(all_links)} pages.",
             "memory": memory
         }
     except Exception as e:
-        # Return an error response
         return {
-            "responseString": f"An error occurred: {str(e)}",
+            "responseString": f"Error: {str(e)}",
             "memory": memory
         }
 
-
-from urllib.parse import urlparse, urljoin
-import requests
-from bs4 import BeautifulSoup
-
-async def extract_links_only(
-    url: str,
-    whitelist: list = None,
-    blacklist: list = None
-):
+async def extract_links_only(url: str, whitelist=None, blacklist=None):
     try:
-        # Fetch the page content
-        response = requests.get(url)
-        response.raise_for_status()
-
-        # Parse the page content
-        soup = BeautifulSoup(response.content, 'html.parser')
-
-        # Convert whitelist and blacklist to sets for faster lookup
-        whitelist = set(whitelist) if whitelist else None
-        blacklist = set(blacklist) if blacklist else None
-
-        # Extract all links
+        page_source = fetch_page(url)
+        
         links = set()
-        for a_tag in soup.find_all('a', href=True):
+        for a_tag in page_source.find_all('a', href=True):
             href = a_tag['href']
             full_url = urljoin(url, href)
-
-            # Apply whitelist and blacklist filters
-            include_link = True
-
-            # Check whitelist
-            if whitelist:
-                include_link = any(whitelist_item in full_url for whitelist_item in whitelist)
-
-            # Check blacklist
-            if blacklist and include_link:
-                include_link = not any(blacklist_item in full_url for blacklist_item in blacklist)
-
-            if include_link:
+            
+            if (not whitelist or any(w in full_url for w in whitelist)) and \
+               (not blacklist or not any(b in full_url for b in blacklist)):
                 links.add(full_url)
-
+        
         return {"links": list(links)}
     except Exception as e:
         return {"error": str(e)}
 
-
-
-
-from urllib.parse import urlparse, urljoin
-from collections import deque
-import requests
-from bs4 import BeautifulSoup
-
-async def extract_related_links(
-    url: str,
-    whitelist: list = None,
-    blacklist: list = None,
-    link_limit: int = 10
-):
+async def extract_related_links(url: str, whitelist=None, blacklist=None, link_limit: int = 10):
     try:
-        # Parse the input URL to extract the domain
         parsed_url = urlparse(url)
-        base_domain = parsed_url.netloc  # e.g., "example.com"
-
-        # Initialize queue and set
+        base_domain = parsed_url.netloc
+        
         queue = deque([url])
         visited = set()
         related_links = set()
-
-        # Convert whitelist and blacklist to sets for faster lookup
-        whitelist = set(whitelist) if whitelist else None
-        blacklist = set(blacklist) if blacklist else None
-
+        
         while queue and len(related_links) < link_limit:
             current_url = queue.popleft()
             if current_url in visited:
                 continue
-
+                
             visited.add(current_url)
-
+            
             try:
-                # Fetch the page content
-                response = requests.get(current_url)
-                response.raise_for_status()
-
-                # Parse the page content
-                soup = BeautifulSoup(response.content, 'html.parser')
-
-                # Extract links
-                for a_tag in soup.find_all('a', href=True):
+                page_source = fetch_page(current_url)
+                
+                for a_tag in page_source.find_all('a', href=True):
                     href = a_tag['href']
                     full_url = urljoin(current_url, href)
-
-                    # Parse the full URL to extract its domain
                     parsed_full_url = urlparse(full_url)
-                    full_url_domain = parsed_full_url.netloc
-
-                    # Check if the link's domain matches the base domain
-                    if full_url_domain == base_domain and full_url not in visited:
-                        # Apply whitelist and blacklist filters
-                        include_link = True
-
-                        # Check whitelist
-                        if whitelist:
-                            include_link = any(whitelist_item in full_url for whitelist_item in whitelist)
-
-                        # Check blacklist
-                        if blacklist and include_link:
-                            include_link = not any(blacklist_item in full_url for blacklist_item in blacklist)
-
-                        if include_link:
+                    
+                    if parsed_full_url.netloc == base_domain and full_url not in visited:
+                        if (not whitelist or any(w in full_url for w in whitelist)) and \
+                           (not blacklist or not any(b in full_url for b in blacklist)):
                             related_links.add(full_url)
                             queue.append(full_url)
-
-            except Exception as e:
-                print(f"Error fetching {current_url}: {e}")
-
+            except Exception:
+                continue
+                
         return {"related_links": list(related_links)}
     except Exception as e:
         return {"error": str(e)}
-
-# Define custom JSON schema function
-def custom_json_schema(model):
-    schema = model.schema()
-    properties_formatted = {
-        k: {
-            "title": v.get("title"),
-            "type": v.get("type")
-        } for k, v in schema["properties"].items()
-    }
-    return {
-        "type": "object",
-        "default": {},
-        "properties": properties_formatted,
-        "required": schema.get("required", [])
-    }
-
-# Define the tools list with the updated tools
-tools = [
-    {
-        "name": "web_scraper",
-        "description": "Scrapes a website for links based on provided parameters.",
-        "parameters": custom_json_schema(WebScraperSchema),
-        "runCmd": web_scraper,
-        "isDangerous": False,
-        "functionType": "backend",
-        "isLongRunningTool": True,
-        "rerun": True,
-        "rerunWithDifferentParameters": True
-    },
-    {
-        "name": "scrape_single_page",
-        "description": "Scrapes a single webpage for content and media URLs.",
-        "parameters": custom_json_schema(SinglePageScraperSchema),
-        "runCmd": scrape_single_page,
-        "isDangerous": False,
-        "functionType": "backend",
-        "isLongRunningTool": False,
-        "rerun": True,
-        "rerunWithDifferentParameters": True
-    },
-    {
-        "name": "single_page_media",
-        "description": "Extracts media content (images, videos, audio, PDFs) from a single webpage.",
-        "parameters": custom_json_schema(SinglePageMediaSchema),
-        "runCmd": extract_media_from_single_page,
-        "isDangerous": False,
-        "functionType": "backend",
-        "isLongRunningTool": False,
-        "rerun": True,
-        "rerunWithDifferentParameters": True
-    },
-    {
-        "name": "multiple_page_media",
-        "description": "Extracts media content (images, videos, audio, PDFs) from multiple pages of a website.",
-        "parameters": custom_json_schema(MultiplePageMediaSchema),
-        "runCmd": multiple_page_media,
-        "isDangerous": False,
-        "functionType": "backend",
-        "isLongRunningTool": True,
-        "rerun": True,
-        "rerunWithDifferentParameters": True
-    }
-]
