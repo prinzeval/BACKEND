@@ -71,6 +71,9 @@ class ScraperKING:
             base_url = 'https://' + base_url
 
         try:
+            # Add the base URL to the set of all links immediately
+            self.all_links.add(base_url)
+            
             link_queue = deque([base_url])
             links_scraped = 0
 
@@ -132,10 +135,6 @@ class ScraperKING:
                 except requests.exceptions.RequestException as e:
                     print(f"Error fetching {url}: {e}")
                     continue
-
-            # Ensure the base URL is included in the list if no other links were found
-            if not self.all_links:
-                self.all_links.add(base_url)
 
             standardized_links = set()
             for link in self.all_links:
