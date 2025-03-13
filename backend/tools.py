@@ -6,6 +6,9 @@ from scrapper.Url_Info import bring_data
 from scrapper.media import extract_media_links
 import requests
 from bs4 import BeautifulSoup
+from urllib.parse import urljoin,urlparse
+from collections import deque
+
 
 # Define schemas for the tools
 class WebScraperSchema(BaseModel):
@@ -140,6 +143,78 @@ async def multiple_page_media(url: str, whitelist: str = "", blacklist: str = ""
             "responseString": f"An error occurred: {str(e)}",
             "memory": memory
         }
+
+
+async def extract_links_only(url: str):
+    try:
+        # Fetch the page content
+        response = requests.get(url)
+        response.raise_for_status()
+
+        # Parse the page content
+        soup = BeautifulSoup(response.content, 'html.parser')
+
+        # Extract all links
+        links = set()
+        for a_tag in soup.find_all('a', href=True):
+            href = a_tag['href']
+            full_url = urljoin(url, href)
+            links.add(full_url)
+
+        return {"links": list(links)}
+    except Exception as e:
+        return {"error": str(e)}
+    
+
+
+
+
+async def extract_related_links(url: str, link_limit: int = 10):
+    try:
+        # Parse the input URL to extract the domain
+        parsed_url = urlparse(url)
+        base_domain = parsed_url.netloc  # e.g., "example.com"
+
+        # Initialize queue and set
+        queue = deque([url])
+        visited = set()
+        related_links = set()
+
+        while queue and len(related_links) < link_limit:
+            current_url = queue.popleft()
+            if current_url in visited:
+                continue
+
+            visited.add(current_url)
+
+            try:
+                # Fetch the page content
+                response = requests.get(current_url)
+                response.raise_for_status()
+
+                # Parse the page content
+                soup = BeautifulSoup(response.content, 'html.parser')
+
+                # Extract links
+                for a_tag in soup.find_all('a', href=True):
+                    href = a_tag['href']
+                    full_url = urljoin(current_url, href)
+
+                    # Parse the full URL to extract its domain
+                    parsed_full_url = urlparse(full_url)
+                    full_url_domain = parsed_full_url.netloc
+
+                    # Check if the link's domain matches the base domain
+                    if full_url_domain == base_domain and full_url not in visited:
+                        related_links.add(full_url)
+                        queue.append(full_url)
+
+            except Exception as e:
+                print(f"Error fetching {current_url}: {e}")
+
+        return {"related_links": list(related_links)}
+    except Exception as e:
+        return {"error": str(e)}
 
 # Define custom JSON schema function
 def custom_json_schema(model):
