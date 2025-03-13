@@ -64,9 +64,14 @@ async def extract_media_from_single_page(url: str, memory: Dict = {}):
 
 async def multiple_page_media(url: str, whitelist: str = "", blacklist: str = "", link_limit: int = 100, memory: Dict = {}):
     try:
-        # First get all links
-        scraper_result = await web_scraper(url, whitelist, blacklist, link_limit)
-        all_links = scraper_result["memory"]["scrapedLinks"]
+        # First get all links without scraping content
+        whitelist_list = parse_list_param(whitelist)
+        blacklist_list = parse_list_param(blacklist)
+        
+        scraper = ScraperKING(link_limit=link_limit)
+        # We'll modify this to not call bring_data
+        result = scraper.get_links_only(url, whitelist_list, blacklist_list)
+        all_links = result.get("all_links", [])
         
         # Then extract media from each link
         media_links = []
