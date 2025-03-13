@@ -1,8 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from tools import web_scraper, scrape_single_page, extract_media_from_single_page, multiple_page_media
-from models import ScrapedBaseUrl, Output
-from fetch_db import fetch_data
+from models import ScrapedBaseUrl, Output, MultipleFetchRequest
+from fetch_db import fetch_data, fetch_multiple_data
 app = FastAPI()
 
 # Add CORS middleware
@@ -64,5 +64,15 @@ async def fetch_endpoint(url: str):
         if "error" in result:
             raise HTTPException(status_code=400, detail=result["error"])
         return result["data"]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/fetch_multiple/")
+async def fetch_multiple_endpoint(request: MultipleFetchRequest):
+    try:
+        result = fetch_multiple_data(request.urls)
+        if "error" in result and not result.get("data"):
+            raise HTTPException(status_code=500, detail=result["error"])
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

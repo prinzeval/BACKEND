@@ -8,3 +8,6 @@ class ScrapedBaseUrl(BaseModel):
 
 class Output(BaseModel):
     all_links: List[str] = []
+
+class MultipleFetchRequest(BaseModel):
+    urls: List[str]
