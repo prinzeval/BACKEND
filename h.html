@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valentine's Portfolio - Rumoogle</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        
+        body {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Homepage Styles */
+        .homepage {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 20px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: flex-end;
+            width: 100%;
+            padding: 10px;
+        }
+        
+        .header a {
+            margin-left: 15px;
+            text-decoration: none;
+            color: #000;
+            font-size: 13px;
+        }
+        
+        .logo {
+            margin-bottom: 20px;
+            margin-top: 40px;
+        }
+        
+        .logo img {
+            width: 272px;
+        }
+        
+        .search-container {
+            width: 100%;
+            max-width: 584px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .search-box {
+            width: 100%;
+            height: 44px;
+            border: 1px solid #dfe1e5;
+            border-radius: 24px;
+            padding: 0 15px;
+            font-size: 16px;
+            outline: none;
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+        
+        .search-box:hover {
+            box-shadow: 0 1px 6px rgba(32, 33, 36, 0.28);
+            border-color: rgba(223, 225, 229, 0);
+        }
+        
+        .search-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            color: #9aa0a6;
+        }
+        
+        .search-input {
+            flex-grow: 1;
+            border: none;
+            outline: none;
+            font-size: 16px;
+        }
+        
+        .voice-icon, .camera-icon {
+            width: 24px;
+            height: 24px;
+            margin-left: 10px;
+            color: #4285f4;
+        }
+        
+        .search-buttons {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        .search-buttons button {
+            background-color: #f8f9fa;
+            border: 1px solid #f8f9fa;
+            border-radius: 4px;
+            color: #3c4043;
+            font-size: 14px;
+            margin: 11px 4px;
+            padding: 0 16px;
+            height: 36px;
+            cursor: pointer;
+        }
+        
+        .search-buttons button:hover {
+            box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+            border: 1px solid #dadce0;
+        }
+        
+        .footer {
+            background-color: #f2f2f2;
+            width: 100%;
+            margin-top: auto;
+        }
+        
+        .footer-top {
+            padding: 15px 30px;
+            border-bottom: 1px solid #dadce0;
+            color: #70757a;
+            font-size: 15px;
+        }
+        
+        .footer-links {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 30px;
+        }
+        
+        .footer-links a {
+            color: #70757a;
+            text-decoration: none;
+            font-size: 14px;
+            margin-right: 15px;
+        }
+        
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Search History Dropdown */
+        .search-history {
+            display: none;
+            position: absolute;
+            top: 50px;
+            left: 0;
+            width: 100%;
+            background: white;
+            border: 1px solid #dfe1e5;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(32, 33, 36, 0.28);
+            z-index: 10;
+        }
+        
+        .search-history.visible {
+            display: block;
+        }
+        
+        .search-history-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #202124;
+        }
+        
+        .search-history-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        /* Results Page Styles */
+        .results-page {
+            display: none;
+            flex-direction: column;
+            background-color: #202124;
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .results-header {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #dadce0;
+            background-color: #202124;
+            color: white;
+        }
+        
+        .results-logo {
+            height: 30px;
+            margin-right: 20px;
+        }
+        
+        .results-search-box {
+            flex-grow: 1;
+            max-width: 692px;
+            height: 44px;
+            background: #303134;
+            border: 1px solid #5f6368;
+            border-radius: 24px;
+            padding: 0 15px;
+            display: flex;
+            align-items: center;
+            color: white;
+        }
+        
+        .results-search-input {
+            flex-grow: 1;
+            border: none;
+            outline: none;
+            background: transparent;
+            color: white;
+            font-size: 16px;
+        }
+        
+        .results-nav {
+            display: flex;
+            padding: 0 20px;
+            margin-top: 10px;
+            border-bottom: 1px solid #dadce0;
+            background-color: #202124;
+        }
+        
+        .results-nav a {
+            color: #8ab4f8;
+            text-decoration: none;
+            margin-right: 20px;
+            padding: 15px 0;
+            font-size: 14px;
+        }
+        
+        .results-nav a.active {
+            color: #8ab4f8;
+            border-bottom: 3px solid #8ab4f8;
+        }
+        
+        .results-container {
+            padding: 20px;
+            background-color: #202124;
+            color: #bdc1c6;
+            min-height: calc(100vh - 170px);
+        }
+        
+        .result-item {
+            margin-bottom: 30px;
+            max-width: 650px;
+        }
+        
+        .result-url {
+            color: #bdc1c6;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+        
+        .result-title {
+            color: #8ab4f8;
+            font-size: 20px;
+            margin-bottom: 5px;
+            text-decoration: none;
+        }
+        
+        .result-title:hover {
+            text-decoration: underline;
+        }
+        
+        .result-description {
+            color: #bdc1c6;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .result-with-image {
+            display: flex;
+        }
+        
+        .result-image {
+            width: 100px;
+            height: 100px;
+            border-radius: 8px;
+            margin-right: 15px;
+            object-fit: cover;
+            background-color: #4285f4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .result-content {
+            flex-grow: 1;
+        }
+        
+        .skills-container {
+            background-color: #303134;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            max-width: 650px;
+        }
+        
+        .skills-title {
+            color: white;
+            margin-bottom: 15px;
+        }
+        
+        .skills-list {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        
+        .skill-tag {
+            background-color: #3c4043;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 16px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .language-bar {
+            height: 20px;
+            width: 100%;
+            background: linear-gradient(to right, 
+                #F4E542 0%, #F4E542 55.81%, 
+                #3498DB 55.81%, #3498DB 80.61%, 
+                #E74C3C 80.61%, #E74C3C 86.55%, 
+                #4DB6AC 86.55%, #4DB6AC 90.83%, 
+                #FF9800 90.83%, #FF9800 94.91%);
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .language-list {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        
+        .language-item {
+            display: flex;
+            align-items: center;
+            margin-right: 20px;
+            margin-bottom: 10px;
+        }
+        
+        .language-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .js-dot {
+            background-color: #F4E542;
+        }
+        
+        .py-dot {
+            background-color: #3498DB;
+        }
+        
+        .ruby-dot {
+            background-color: #E74C3C;
+        }
+        
+        .ts-dot {
+            background-color: #4DB6AC;
+        }
+        
+        .java-dot {
+            background-color: #FF9800;
+        }
+        
+        .html-dot {
+            background-color: #E74C3C;
+        }
+        
+        .profile-img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: #8ab4f8;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .menu-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: white;
+            font-size: 20px;
+            margin-left: 15px;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 650px) {
+            .search-container {
+                width: 90%;
+            }
+            
+            .footer-links {
+                flex-direction: column;
+            }
+            
+            .footer-links div {
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Homepage -->
+    <div class="homepage">
+        <header class="header">
+            <a href="#">Gmail</a>
+            <a href="#">Images</a>
+            <div class="profile-img">V</div>
+        </header>
+        
+        <div class="logo">
+            <img src="/api/placeholder/272/92" alt="Rumoogle Logo">
+        </div>
+        
+        <div class="search-container">
+            <div class="search-box" onclick="showSearchHistory()">
+                <div class="search-icon">
+                    <svg focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path>
+                    </svg>
+                </div>
+                <input type="text" class="search-input" placeholder="Search my projects">
+                <div class="voice-icon">
+                    <svg focusable="false" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path fill="#4285f4" d="M12 15c1.66 0 3-1.31 3-2.97V5.97C15 4.31 13.66 3 12 3S9 4.31 9 5.97v6.06c0 1.66 1.34 2.97 3 2.97z"></path>
+                        <path fill="#4285f4" d="M11 18.08h2V22h-2z"></path>
+                        <path fill="#4285f4" d="M7.05 16.87c-1.27-1.33-2.05-2.83-2.05-4.87h2c0 1.45 0.56 2.42 1.47 3.38v0.32l-1.15 1.18z"></path>
+                        <path fill="#4285f4" d="M16.95 16.87l-1.22-1.17 0.03-0.32c0.91-0.96 1.46-1.93 1.46-3.38h2c0 2.04-0.77 3.54-2.05 4.87z"></path>
+                    </svg>
+                </div>
+                <div class="camera-icon">
+                    <svg focusable="false" viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
+                        <rect fill="none" height="192" width="192"></rect>
+                        <g>
+                            <circle fill="#4285f4" cx="96" cy="104.15" r="28"></circle>
+                            <path fill="#ea4335" d="M160,72v40.15V136c0,1.69-0.34,3.29-0.82,4.82v0v0c-1.57,4.92-5.43,8.78-10.35,10.35h0v0 c-1.53,0.49-3.13,0.82-4.82,0.82H66l16,16h50h12c4.42,0,8.63-0.9,12.46-2.51c3.83-1.62,7.28-3.96,10.17-6.86 c1.45-1.45,2.76-3.03,3.91-4.74c2.3-3.4,3.96-7.28,4.81-11.44c0.43-2.08,0.65-4.24,0.65-6.45v-12V96.15V84l-6-19l-10.82,2.18 C159.66,68.71,160,70.31,160,72z"></path>
+                            <path fill="#4285f4" d="M32,72c0-1.69,0.34-3.29,0.82-4.82c1.57-4.92,5.43-8.78,10.35-10.35C44.71,56.34,46.31,56,48,56 h96c1.69,0,3.29,0.34,4.82,0.82c4.92,1.57,8.78,5.43,10.35,10.35C159.66,68.71,160,70.31,160,72v40.15V136c0,1.69-0.34,3.29-0.82,4.82 v0v0c-1.57,4.92-5.43,8.78-10.35,10.35h0v0c-1.53,0.49-3.13,0.82-4.82,0.82H66l16,16h50h12c4.42,0,8.63-0.9,12.46-2.51 c3.83-1.62,7.28-3.96,10.17-6.86c1.45-1.45,2.76-3.03,3.91-4.74c2.3-3.4,3.96-7.28,4.81-11.44c0.43-2.08,0.65-4.24,0.65-6.45v-12 V96.15V84l-6-19l-10.82,2.18C159.66,68.71,160,70.31,160,72z"></path>
+                        </g>
+                    </svg>
+                </div>
+            </div>
+            <!-- Search History Dropdown -->
+            <div class="search-history" id="searchHistory">
+                <div class="search-history-item" onclick="showResults('Valentine Project')">Valentine Project</div>
+                <div class="search-history-item" onclick="showResults('AI Chatbot')">AI Chatbot</div>
+                <div class="search-history-item" onclick="showResults('E-Commerce Platform')">E-Commerce Platform</div>
+            </div>
+        </div>
+        
+        <div class="search-buttons">
+            <button onclick="showResults('Rumoogle Search')">Rumoogle Search</button>
+            <button onclick="showResults('I\'m Feeling Lucky')">I'm Feeling Lucky</button>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-top">Cyprus, Turkey</div>
+        <div class="footer-links">
+            <div>
+                <a href="#">About</a>
+                <a href="#">Advertising</a>
+                <a href="#">Business</a>
+                <a href="#">How Search works</a>
+            </div>
+            <div>
+                <a href="#">Privacy</a>
+                <a href="#">Terms</a>
+                <a href="#">Settings</a>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Results Page -->
+    <div class="results-page" id="resultsPage">
+        <header class="results-header">
+            <img src="/api/placeholder/30/30" alt="Rumoogle Logo" class="results-logo">
+            <div class="results-search-box">
+                <input type="text" class="results-search-input" placeholder="Search my projects">
+                <div class="search-icon">
+                    <svg focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path>
+                    </svg>
+                </div>
+            </div>
+            <button class="menu-button">☰</button>
+        </header>
+        
+        <nav class="results-nav">
+            <a href="#" class="active">All</a>
+            <a href="#">Projects</a>
+            <a href="#">Experience</a>
+            <a href="#">Skills</a>
+            <a href="#">Contact</a>
+        </nav>
+        
+        <div class="results-container">
+            <!-- Results will be dynamically inserted here -->
+        </div>
+    </div>
+
+    <script>
+        // Function to show search history
+        function showSearchHistory() {
+            const searchHistory = document.getElementById('searchHistory');
+            searchHistory.classList.toggle('visible');
+        }
+
+        // Function to show results page
+        function showResults(query) {
+            const homepage = document.querySelector('.homepage');
+            const resultsPage = document.getElementById('resultsPage');
+            const resultsContainer = document.querySelector('.results-container');
+
+            // Hide homepage and show results page
+            homepage.style.display = 'none';
+            resultsPage.style.display = 'flex';
+
+            // Clear previous results
+            resultsContainer.innerHTML = '';
+
+            // Add results based on the query
+            if (query === 'Valentine Project') {
+                resultsContainer.innerHTML = `
+                    <div class="result-item">
+                        <div class="result-url">https://rumoogle.com/valentine-project</div>
+                        <a href="#" class="result-title">Valentine Project: AI-Powered Chatbot</a>
+                        <div class="result-description">
+                            Developed an AI-powered chatbot using Python and TensorFlow. The chatbot can handle customer queries and provide instant responses.
+                        </div>
+                    </div>
+                `;
+            } else if (query === 'AI Chatbot') {
+                resultsContainer.innerHTML = `
+                    <div class="result-item">
+                        <div class="result-url">https://rumoogle.com/ai-chatbot</div>
+                        <a href="#" class="result-title">AI Chatbot: Natural Language Processing</a>
+                        <div class="result-description">
+                            Built a chatbot using NLP techniques to understand and respond to user queries in real-time.
+                        </div>
+                    </div>
+                `;
+            } else if (query === 'E-Commerce Platform') {
+                resultsContainer.innerHTML = `
+                    <div class="result-item">
+                        <div class="result-url">https://rumoogle.com/e-commerce-platform</div>
+                        <a href="#" class="result-title">E-Commerce Platform: Full-Stack Development</a>
+                        <div class="result-description">
+                            Developed a full-stack e-commerce platform using React, Node.js, and MongoDB.
+                        </div>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
