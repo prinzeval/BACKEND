@@ -35,7 +35,7 @@ async def web_scraper(url: str, whitelist: str = "", blacklist: str = "", link_l
 async def scrape_single_page(url: str, memory: Dict = {}):
     try:
         bring_data([url], [url], [])
-        memory["scrapedContent"] = "Content from the single page scrape is now available."
+        memory["scrapedContent"] = "Content from the single page scrape is now available Pls fetch to see."
         return {
             "responseString": f"Scraped content from {url}.",
             "memory": memory
